@@ -54,7 +54,9 @@ import org.codice.ddf.registry.federationadmin.converter.RegistryPackageWebConve
 import org.codice.ddf.registry.federationadmin.service.FederationAdminException;
 import org.codice.ddf.registry.federationadmin.service.FederationAdminService;
 import org.codice.ddf.ui.admin.api.ConfigurationAdminExt;
+import org.geotools.filter.FilterFactoryImpl;
 import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -72,7 +74,6 @@ import ddf.catalog.data.Metacard;
 import ddf.catalog.data.Result;
 import ddf.catalog.data.impl.AttributeImpl;
 import ddf.catalog.federation.FederationException;
-import ddf.catalog.filter.FilterBuilder;
 import ddf.catalog.operation.CreateRequest;
 import ddf.catalog.operation.CreateResponse;
 import ddf.catalog.operation.DeleteRequest;
@@ -100,6 +101,8 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 public class FederationAdmin implements FederationAdminMBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FederationAdmin.class);
+
+    private static final FilterFactory FILTER_FACTORY = new FilterFactoryImpl();
 
     private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
 
@@ -143,8 +146,6 @@ public class FederationAdmin implements FederationAdminMBean {
     private AdminRegistryHelper helper;
 
     private CatalogFramework catalogFramework;
-
-    private FilterBuilder filterBuilder;
 
     private Map<String, CatalogStore> catalogStoreMap;
 
@@ -297,10 +298,11 @@ public class FederationAdmin implements FederationAdminMBean {
                 federationAdminService.getLocalRegistryObjects();
 
         List<Metacard> metacards = federationAdminService.getLocalRegistryMetacards();
-        Map<String, Metacard> metacardByRegistryIdMap =getRegistryIdMetacardMap(metacards);
+        Map<String, Metacard> metacardByRegistryIdMap = getRegistryIdMetacardMap(metacards);
 
         for (RegistryPackageType registryPackage : registryPackages) {
-            Map<String, Object> registryWebMap = RegistryPackageWebConverter.getRegistryObjectWebMap(registryPackage);
+            Map<String, Object> registryWebMap =
+                    RegistryPackageWebConverter.getRegistryObjectWebMap(registryPackage);
 
             Metacard metacard = metacardByRegistryIdMap.get(registryPackage.getId());
             Map<String, Object> transientValues = getTransientValuesMap(metacard);
@@ -414,7 +416,8 @@ public class FederationAdmin implements FederationAdminMBean {
             Map<String, Metacard> metacardByRegistryIdMap = getRegistryIdMetacardMap(metacards);
 
             for (RegistryPackageType registryPackage : registryMetacardObjects) {
-                Map<String, Object> registryWebMap = RegistryPackageWebConverter.getRegistryObjectWebMap(registryPackage);
+                Map<String, Object> registryWebMap =
+                        RegistryPackageWebConverter.getRegistryObjectWebMap(registryPackage);
 
                 Metacard metacard = metacardByRegistryIdMap.get(registryPackage.getId());
                 Map<String, Object> transientValues = getTransientValuesMap(metacard);
@@ -443,10 +446,11 @@ public class FederationAdmin implements FederationAdminMBean {
             return updatedPublishedLocations;
         }
 
-        Filter filter = filterBuilder.attribute(RegistryObjectMetacardType.REGISTRY_ID)
-                .is()
-                .equalTo()
-                .text(source);
+        Filter filter = FILTER_FACTORY.and(FILTER_FACTORY.like(FILTER_FACTORY.property(
+                RegistryObjectMetacardType.REGISTRY_ID), source),
+                FILTER_FACTORY.like(FILTER_FACTORY.property(Metacard.TAGS),
+                        RegistryConstants.REGISTRY_TAG));
+
         Query query = new QueryImpl(filter);
 
         QueryResponse queryResponse = catalogFramework.query(new QueryRequestImpl(query));
@@ -458,22 +462,27 @@ public class FederationAdmin implements FederationAdminMBean {
             if (metacard == null) {
                 return updatedPublishedLocations;
             }
-            List<Serializable> currentlyPublishedLocations = metacard.getAttribute(
-                    RegistryObjectMetacardType.PUBLISHED_LOCATIONS)
-                    .getValues();
 
-            List<String> publishLocations = destinations.stream()
-                    .filter(destination -> !currentlyPublishedLocations.contains(destination))
-                    .collect(Collectors.toList());
+            List<Serializable> currentlyPublishedLocations = new ArrayList<>();
+            Attribute publishedLocations =
+                    metacard.getAttribute(RegistryObjectMetacardType.PUBLISHED_LOCATIONS);
+            if (publishedLocations != null) {
+                currentlyPublishedLocations.addAll(publishedLocations.getValues());
+            }
+
+            List<String> publishLocations = new ArrayList<>();
+            for (String newDestination : destinations) {
+                if (currentlyPublishedLocations.contains(newDestination)) {
+                    updatedPublishedLocations.add(newDestination);
+                } else {
+                    publishLocations.add(newDestination);
+                }
+            }
 
             List<String> unpublishLocations = currentlyPublishedLocations.stream()
                     .map(destination -> (String) destination)
                     .filter(destination -> !destinations.contains(destination))
                     .collect(Collectors.toList());
-
-            updatedPublishedLocations.addAll(destinations.stream()
-                    .filter(destination -> !publishLocations.contains(destination))
-                    .collect(Collectors.toList()));
 
             for (String id : publishLocations) {
                 CreateRequest createRequest = new CreateRequestImpl(metacard);
@@ -541,10 +550,12 @@ public class FederationAdmin implements FederationAdminMBean {
 
     private Boolean checkIfMetacardExists(String storeId, String registryId)
             throws UnsupportedQueryException {
-        Filter filter = filterBuilder.attribute(RegistryObjectMetacardType.REGISTRY_ID)
-                .is()
-                .equalTo()
-                .text(registryId);
+
+        Filter filter = FILTER_FACTORY.and(FILTER_FACTORY.like(FILTER_FACTORY.property(
+                RegistryObjectMetacardType.REGISTRY_ID), registryId),
+                FILTER_FACTORY.like(FILTER_FACTORY.property(Metacard.TAGS),
+                        RegistryConstants.REGISTRY_TAG));
+
         Query query = new QueryImpl(filter);
         SourceResponse queryResponse = catalogStoreMap.get(storeId)
                 .query(new QueryRequestImpl(query));
@@ -600,7 +611,9 @@ public class FederationAdmin implements FederationAdminMBean {
         Map<String, Metacard> registryIdMetacardMap = new HashMap<>();
 
         for (Metacard metacard : metacards) {
-            String registryId = metacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID).getValue().toString();
+            String registryId = metacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID)
+                    .getValue()
+                    .toString();
 
             registryIdMetacardMap.put(registryId, metacard);
         }
@@ -733,10 +746,6 @@ public class FederationAdmin implements FederationAdminMBean {
 
     public void setFederationAdminService(FederationAdminService federationAdminService) {
         this.federationAdminService = federationAdminService;
-    }
-
-    public void setFilterBuilder(FilterBuilder filterBuilder) {
-        this.filterBuilder = filterBuilder;
     }
 
     public void setParser(Parser parser) {
