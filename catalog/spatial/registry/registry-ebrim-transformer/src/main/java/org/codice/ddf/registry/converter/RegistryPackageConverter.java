@@ -544,6 +544,10 @@ public class RegistryPackageConverter {
             MetacardImpl metacard) {
         List<String> stringAttributes = getSlotStringAttributes(slot);
 
+        if (CollectionUtils.isEmpty(stringAttributes)) {
+            return;
+        }
+
         if (isAttributeMultiValued(metacardAttributeName, metacard)) {
             metacard.setAttribute(metacardAttributeName, (Serializable) stringAttributes);
         } else {
