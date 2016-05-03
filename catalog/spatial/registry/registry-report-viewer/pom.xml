@@ -14,72 +14,44 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.codice.ddf.registry</groupId>
         <artifactId>registry</artifactId>
-        <version>2.10.0-SNAPSHOT</version>
+        <groupId>org.codice.ddf.registry</groupId>
+        <version>2.9.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>registry-federation-admin-service-impl</artifactId>
-    <name>DDF :: Registry :: Federation :: Admin :: Service :: Impl</name>
+    <artifactId>registry-report-viewer</artifactId>
+    <name>DDF :: Registry :: Report Viewer</name>
     <packaging>bundle</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>org.codice.ddf.registry</groupId>
-            <artifactId>registry-federation-admin-service</artifactId>
-            <version>${project.version}</version>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.codice.ddf.registry</groupId>
-            <artifactId>registry-api</artifactId>
-            <version>${project.version}</version>
+            <artifactId>registry-federation-admin-service</artifactId>
         </dependency>
         <dependency>
             <groupId>org.codice.ddf.registry</groupId>
             <artifactId>registry-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.codice.ddf.registry</groupId>
-            <artifactId>registry-schema-bindings</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.jknack</groupId>
+            <artifactId>handlebars</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.codice.ddf.registry</groupId>
-            <artifactId>registry-ebrim-transformer</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
         <dependency>
-            <groupId>ddf.catalog.core</groupId>
-            <artifactId>catalog-core-api-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ddf.security</groupId>
-            <artifactId>ddf-security-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ddf.platform</groupId>
-            <artifactId>platform-parser-xml</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ddf.platform</groupId>
-            <artifactId>platform-parser-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codice.thirdparty</groupId>
-            <artifactId>geotools-suite</artifactId>
-            <version>${org.geotools.bundle.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-ext</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.0</version>
         </dependency>
     </dependencies>
 
@@ -88,22 +60,13 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.name}</Bundle-Name>
                         <Embed-Dependency>
-                            catalog-core-api-impl;scope=!test,
-                            ddf-security-common,
-                            registry-common
+                            handlebars, antlr4-runtime, commons-lang3
                         </Embed-Dependency>
-                        <Import-Package>
-                            !org.codice.ddf.platform.util.http,
-                            !org.codice.ddf.platform.util,
-                            *
-                        </Import-Package>
-                        <Export-Package/>
+                        <Import-Package>!org.abego.treelayout.*,*</Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -125,22 +88,22 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.62</minimum>
+                                            <minimum>0.0</minimum>
                                         </limit>
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.40</minimum>
+                                            <minimum>0.0</minimum>
                                         </limit>
                                         <limit>
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.46</minimum>
+                                            <minimum>0.0</minimum>
                                         </limit>
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.60</minimum>
+                                            <minimum>0.0</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
@@ -151,5 +114,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
