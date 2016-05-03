@@ -81,6 +81,10 @@
         </dependency>
         <dependency>
             <groupId>org.codice.ddf.registry</groupId>
+            <artifactId>registry-report-action-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codice.ddf.registry</groupId>
             <artifactId>registry-source-configuration-handler</artifactId>
         </dependency>
     </dependencies>
