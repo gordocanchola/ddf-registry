@@ -160,8 +160,7 @@ public class RegistryReportViewer {
                     String bindingType;
                     bindingProperties = getCustomSlots(binding.getSlot());
                     if (!bindingProperties.containsKey(BINDING_TYPE) || bindingProperties.get(
-                            BINDING_TYPE)
-                            .equals(null)) {
+                            BINDING_TYPE) == null) {
                         continue;
                     }
                     bindingType = bindingProperties.get(BINDING_TYPE)
