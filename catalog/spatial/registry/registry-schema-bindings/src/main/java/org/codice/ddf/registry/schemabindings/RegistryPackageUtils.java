@@ -16,15 +16,11 @@ package org.codice.ddf.registry.schemabindings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.JAXBElement;
-
 import org.apache.commons.collections.CollectionUtils;
-import org.codice.ddf.registry.common.RegistryConstants;
 
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.AssociationType1;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
@@ -116,11 +112,13 @@ public final class RegistryPackageUtils {
         return getObjectsFromRegistryObjectList(registryPackage, AssociationType1.class);
     }
 
-    public static List<AssociationType1> getAssociations(RegistryObjectListType registryObjectList) {
+    public static List<AssociationType1> getAssociations(
+            RegistryObjectListType registryObjectList) {
         return getObjectsFromRegistryObjectList(registryObjectList, AssociationType1.class);
     }
 
-    public static <T extends RegistryObjectType> List<T> getObjectsFromRegistryObjectList(RegistryPackageType registryPackage, Class<T> type) {
+    public static <T extends RegistryObjectType> List<T> getObjectsFromRegistryObjectList(
+            RegistryPackageType registryPackage, Class<T> type) {
         List<T> registryObjects = new ArrayList<>();
 
         if (registryPackage == null) {
@@ -128,7 +126,8 @@ public final class RegistryPackageUtils {
         }
 
         if (registryPackage.isSetRegistryObjectList()) {
-            registryObjects = getObjectsFromRegistryObjectList(registryPackage.getRegistryObjectList(), type);
+            registryObjects =
+                    getObjectsFromRegistryObjectList(registryPackage.getRegistryObjectList(), type);
         }
 
         return registryObjects;
@@ -171,12 +170,14 @@ public final class RegistryPackageUtils {
         return slotMap;
     }
 
-    public static Map<String, List<SlotType1>> getNameSlotMapWithMultipleValues(List<SlotType1> slots) {
+    public static Map<String, List<SlotType1>> getNameSlotMapWithMultipleValues(
+            List<SlotType1> slots) {
         Map<String, List<SlotType1>> slotMap = new HashMap<>();
 
         for (SlotType1 slot : slots) {
             slotMap.putIfAbsent(slot.getName(), new ArrayList<>());
-            slotMap.get(slot.getName()).add(slot);
+            slotMap.get(slot.getName())
+                    .add(slot);
         }
 
         return slotMap;
