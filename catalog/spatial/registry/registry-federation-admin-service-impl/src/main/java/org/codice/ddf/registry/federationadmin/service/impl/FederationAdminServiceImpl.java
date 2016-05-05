@@ -201,13 +201,16 @@ public class FederationAdminServiceImpl implements FederationAdminService {
             throws FederationAdminException {
         validateRegistryMetacard(updateMetacard);
 
-        if (updateMetacard.getId() == null) {
+        if (updateMetacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID) == null) {
             throw new FederationAdminException(
-                    "Error updating local registry entry. Metacard Id is not set.");
+                    "Error updating registry entry. Metacard registry-id is not set.");
         }
+        String registryId = updateMetacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID)
+                .getValue()
+                .toString();
         List<Filter> filters = new ArrayList<>();
-        filters.add(FILTER_FACTORY.like(FILTER_FACTORY.property(Metacard.ID),
-                updateMetacard.getId()));
+        filters.add(FILTER_FACTORY.like(FILTER_FACTORY.property(RegistryObjectMetacardType.REGISTRY_ID),
+                registryId));
         filters.add(FILTER_FACTORY.like(FILTER_FACTORY.property(Metacard.TAGS),
                 RegistryConstants.REGISTRY_TAG));
 
@@ -215,14 +218,14 @@ public class FederationAdminServiceImpl implements FederationAdminService {
                 getRegistryMetacardsByFilter(FILTER_FACTORY.and(filters));
 
         if (CollectionUtils.isEmpty(existingMetacards)) {
-            String message = "Error updating local registry entry. Registry metacard not found.";
+            String message = "Error updating registry entry. Registry metacard not found.";
             LOGGER.error("{} Registry metacard ID: {}", message, updateMetacard.getId());
             throw new FederationAdminException(message);
         }
 
         if (existingMetacards.size() > 1) {
             String message =
-                    "Error updating local registry entry. Multiple registry metacards found.";
+                    "Error updating registry entry. Multiple registry metacards found.";
 
             List<String> metacardIds = new ArrayList<>();
             metacardIds.addAll(existingMetacards.stream()
@@ -234,13 +237,35 @@ public class FederationAdminServiceImpl implements FederationAdminService {
         }
 
         Metacard existingMetacard = existingMetacards.get(0);
-
+        boolean transientUpdate = false;
         for (String transientAttributeKey : RegistryObjectMetacardType.TRANSIENT_ATTRIBUTES) {
             Attribute transientAttribute = updateMetacard.getAttribute(transientAttributeKey);
             if (transientAttribute == null) {
                 transientAttribute = existingMetacard.getAttribute(transientAttributeKey);
                 if (transientAttribute != null) {
                     updateMetacard.setAttribute(transientAttribute);
+                }
+            } else {
+                Attribute existingAttribute = existingMetacard.getAttribute(transientAttributeKey);
+                if (existingAttribute == null) {
+                    transientUpdate = true;
+                    continue;
+                }
+                if (transientAttribute.getValues()
+                        .size() != existingAttribute.getValues()
+                        .size()) {
+                    transientUpdate = true;
+                    continue;
+                }
+                for (int i = 0; i < transientAttribute.getValues()
+                        .size(); i++) {
+                    if (!transientAttribute.getValues()
+                            .get(i)
+                            .equals(existingAttribute.getValues()
+                                    .get(i))) {
+                        transientUpdate = true;
+                        break;
+                    }
                 }
             }
         }
@@ -249,18 +274,22 @@ public class FederationAdminServiceImpl implements FederationAdminService {
         Map<String, Serializable> properties = new HashMap<>();
         properties.put(SecurityConstants.SECURITY_SUBJECT, systemSubject);
 
+        if (transientUpdate) {
+            properties.put(RegistryConstants.TRANSIENT_ATTRIBUTE_UPDATE, true);
+        }
+
         List<Map.Entry<Serializable, Metacard>> updateList = new ArrayList<>();
-        updateList.add(new AbstractMap.SimpleEntry<>(updateMetacard.getId(), updateMetacard));
+        updateList.add(new AbstractMap.SimpleEntry<>(registryId, updateMetacard));
 
         UpdateRequest updateRequest = new UpdateRequestImpl(updateList,
-                Metacard.ID,
+                RegistryObjectMetacardType.REGISTRY_ID,
                 properties,
                 destinations);
 
         try {
             catalogFramework.update(updateRequest);
         } catch (IngestException | SourceUnavailableException e) {
-            String message = "Error updating local registry entry.";
+            String message = "Error updating registry entry.";
             LOGGER.error("{} Metacard ID: {}", message, updateMetacard.getId());
             throw new FederationAdminException(message, e);
         }
@@ -577,8 +606,8 @@ public class FederationAdminServiceImpl implements FederationAdminService {
 
         } catch (UnsupportedQueryException | SourceUnavailableException | FederationException e) {
             String message = "Error querying for subscribed metacards;";
-            LOGGER.error("{} For source ids: {}", message, sourceIds);
-            throw new FederationAdminException(message, e);
+            LOGGER.warn("{} For source ids: {}", message, sourceIds);
+            //throw new FederationAdminException(message, e);
         }
 
         return remoteRegistryMetacards;
