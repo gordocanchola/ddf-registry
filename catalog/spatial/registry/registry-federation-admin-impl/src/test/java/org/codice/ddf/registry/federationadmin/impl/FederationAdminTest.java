@@ -42,6 +42,7 @@ import org.codice.ddf.parser.xml.XmlParser;
 import org.codice.ddf.registry.common.metacard.RegistryObjectMetacardType;
 import org.codice.ddf.registry.federationadmin.service.FederationAdminException;
 import org.codice.ddf.registry.federationadmin.service.FederationAdminService;
+import org.codice.ddf.registry.schemabindings.RegistryPackageUtils;
 import org.codice.ddf.registry.schemabindings.RegistryPackageWebConverter;
 import org.codice.ddf.registry.transformer.RegistryTransformer;
 import org.junit.Before;
@@ -88,9 +89,11 @@ public class FederationAdminTest {
         parser = new XmlParser();
         configurator = parser.configureParser(Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName()),
                 this.getClass()
                         .getClassLoader());

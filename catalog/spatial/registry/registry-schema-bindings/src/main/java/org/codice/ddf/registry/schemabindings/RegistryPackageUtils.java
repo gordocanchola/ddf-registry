@@ -13,8 +13,10 @@
  */
 package org.codice.ddf.registry.schemabindings;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +41,16 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 public final class RegistryPackageUtils {
 
-    private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
+    public static final net.opengis.gml.v_3_1_1.ObjectFactory GML_FACTORY =
+            new net.opengis.gml.v_3_1_1.ObjectFactory();
 
-    private static final String BINDING_TYPE = "bindingType";
+    public static final net.opengis.ogc.ObjectFactory OGC_FACTORY =
+            new net.opengis.ogc.ObjectFactory();
+
+    public static final ObjectFactory RIM_FACTORY = new ObjectFactory();
+
+    public static final net.opengis.cat.wrs.v_1_0_2.ObjectFactory WRS_FACTORY =
+            new net.opengis.cat.wrs.v_1_0_2.ObjectFactory();
 
     private RegistryPackageUtils() {
     }
@@ -170,7 +179,7 @@ public final class RegistryPackageUtils {
         return slotMap;
     }
 
-    public static Map<String, List<SlotType1>> getNameSlotMapWithMultipleValues(
+    public static Map<String, List<SlotType1>> getNameSlotMapDuplicateSlotNamesAllowed(
             List<SlotType1> slots) {
         Map<String, List<SlotType1>> slotMap = new HashMap<>();
 
@@ -183,7 +192,7 @@ public final class RegistryPackageUtils {
         return slotMap;
     }
 
-    public static List<String> getSlotStringAttributes(SlotType1 slot) {
+    public static List<String> getSlotStringValues(SlotType1 slot) {
         List<String> slotAttributes = new ArrayList<>();
 
         if (slot.isSetValueList()) {
@@ -195,6 +204,29 @@ public final class RegistryPackageUtils {
         }
 
         return slotAttributes;
+    }
+
+    public static List<Date> getSlotDateValues(SlotType1 slot) {
+        List<Date> dates = new ArrayList<>();
+
+        if (slot.isSetValueList()) {
+            ValueListType valueList = slot.getValueList()
+                    .getValue();
+
+            if (valueList.isSetValue()) {
+                List<String> values = valueList.getValue();
+
+                for (String dateString : values) {
+                    Date date = Date.from(ZonedDateTime.parse(dateString)
+                            .toInstant());
+                    if (date != null) {
+                        dates.add(date);
+                    }
+                }
+            }
+        }
+
+        return dates;
     }
 
     public static String getStringFromIST(InternationalStringType internationalString) {
@@ -218,5 +250,30 @@ public final class RegistryPackageUtils {
         ist.setLocalizedString(Collections.singletonList(lst));
 
         return ist;
+    }
+
+    public static SlotType1 getSlotFromString(String slotName, String slotValue, String slotType) {
+        SlotType1 slot = RIM_FACTORY.createSlotType1();
+        ValueListType valueList = RIM_FACTORY.createValueListType();
+        valueList.getValue()
+                .add(slotValue);
+        slot.setValueList(RIM_FACTORY.createValueList(valueList));
+        slot.setSlotType(slotType);
+        slot.setName(slotName);
+
+        return slot;
+    }
+
+    public static SlotType1 getSlotFromStrings(String slotName, List<String> slotValues,
+            String slotType) {
+        SlotType1 slot = RIM_FACTORY.createSlotType1();
+        ValueListType valueList = RIM_FACTORY.createValueListType();
+        valueList.getValue()
+                .addAll(slotValues);
+        slot.setValueList(RIM_FACTORY.createValueList(valueList));
+        slot.setSlotType(slotType);
+        slot.setName(slotName);
+
+        return slot;
     }
 }

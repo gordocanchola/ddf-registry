@@ -13,6 +13,8 @@
  **/
 package org.codice.ddf.registry.federationadmin.service.impl;
 
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.RIM_FACTORY;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -93,13 +95,9 @@ import ddf.catalog.transform.InputTransformer;
 import ddf.security.SecurityConstants;
 import ddf.security.Subject;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.InternationalStringType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.LocalizedStringType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ObjectFactory;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.VersionInfoType;
 
 public class FederationAdminServiceImpl implements FederationAdminService {
@@ -107,8 +105,6 @@ public class FederationAdminServiceImpl implements FederationAdminService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FederationAdminServiceImpl.class);
 
     private static final FilterFactory FILTER_FACTORY = new FilterFactoryImpl();
-
-    private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
 
     private CatalogFramework catalogFramework;
 
@@ -224,8 +220,7 @@ public class FederationAdminServiceImpl implements FederationAdminService {
         }
 
         if (existingMetacards.size() > 1) {
-            String message =
-                    "Error updating registry entry. Multiple registry metacards found.";
+            String message = "Error updating registry entry. Multiple registry metacards found.";
 
             List<String> metacardIds = new ArrayList<>();
             metacardIds.addAll(existingMetacards.stream()
@@ -760,21 +755,18 @@ public class FederationAdminServiceImpl implements FederationAdminService {
 
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(ZoneOffset.UTC.toString()));
         String rightNow = now.toString();
-        ValueListType valueList = RIM_FACTORY.createValueListType();
-        valueList.getValue()
-                .add(rightNow);
 
-        SlotType1 lastUpdated = RIM_FACTORY.createSlotType1();
-        lastUpdated.setValueList(RIM_FACTORY.createValueList(valueList));
-        lastUpdated.setSlotType(DatatypeConstants.DATETIME.toString());
-        lastUpdated.setName(RegistryConstants.XML_LAST_UPDATED_NAME);
+        SlotType1 lastUpdated =
+                RegistryPackageUtils.getSlotFromString(RegistryConstants.XML_LAST_UPDATED_NAME,
+                        rightNow,
+                        DatatypeConstants.DATETIME.toString());
         extrinsicObject.getSlot()
                 .add(lastUpdated);
 
-        SlotType1 liveDate = RIM_FACTORY.createSlotType1();
-        liveDate.setValueList(RIM_FACTORY.createValueList(valueList));
-        liveDate.setSlotType(DatatypeConstants.DATETIME.toString());
-        liveDate.setName(RegistryConstants.XML_LIVE_DATE_NAME);
+        SlotType1 liveDate =
+                RegistryPackageUtils.getSlotFromString(RegistryConstants.XML_LIVE_DATE_NAME,
+                        rightNow,
+                        DatatypeConstants.DATETIME.toString());
         extrinsicObject.getSlot()
                 .add(liveDate);
 
@@ -957,16 +949,6 @@ public class FederationAdminServiceImpl implements FederationAdminService {
         return metacard;
     }
 
-    private InternationalStringType getInternationalStringTypeFromString(
-            String internationalizeThis) {
-        InternationalStringType ist = RIM_FACTORY.createInternationalStringType();
-        LocalizedStringType lst = RIM_FACTORY.createLocalizedStringType();
-        lst.setValue(internationalizeThis);
-        ist.setLocalizedString(Collections.singletonList(lst));
-
-        return ist;
-    }
-
     BundleContext getBundleContext() {
         Bundle bundle = FrameworkUtil.getBundle(this.getClass());
 
@@ -988,9 +970,11 @@ public class FederationAdminServiceImpl implements FederationAdminService {
     public void setParser(Parser parser) {
         List<String> contextPath = Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName());
 
         ClassLoader classLoader = this.getClass()

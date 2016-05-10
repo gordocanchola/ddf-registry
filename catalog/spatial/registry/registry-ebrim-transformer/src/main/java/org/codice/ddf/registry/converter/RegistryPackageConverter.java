@@ -14,7 +14,6 @@
 package org.codice.ddf.registry.converter;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBElement;
 
@@ -32,6 +32,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codice.ddf.registry.common.RegistryConstants;
 import org.codice.ddf.registry.common.metacard.RegistryObjectMetacardType;
+import org.codice.ddf.registry.schemabindings.RegistryPackageUtils;
 import org.jvnet.jaxb2_commons.locator.DefaultRootObjectLocator;
 import org.jvnet.ogc.gml.v_3_1_1.jts.ConversionFailedException;
 import org.jvnet.ogc.gml.v_3_1_1.jts.GML311ToJTSGeometryConverter;
@@ -51,8 +52,6 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.EmailAddressType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExternalIdentifierType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.IdentifiableType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.InternationalStringType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.LocalizedStringType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.OrganizationType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.PersonNameType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.PersonType;
@@ -64,7 +63,6 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.ServiceBindingType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ServiceType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.TelephoneNumberType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 public class RegistryPackageConverter {
 
@@ -193,7 +191,7 @@ public class RegistryPackageConverter {
         validateIdentifiable(organization);
 
         if (organization.isSetName()) {
-            setMetacardStringAttribute(getStringFromIST(organization.getName()),
+            setMetacardStringAttribute(RegistryPackageUtils.getStringFromIST(organization.getName()),
                     RegistryObjectMetacardType.ORGANIZATION_NAME,
                     metacard);
         } else {
@@ -300,14 +298,15 @@ public class RegistryPackageConverter {
             bindings.clear();
             bindingTypes.clear();
 
-            Map<String, List<SlotType1>> slotMap = getSlotMapWithMultipleValues(binding.getSlot());
+            Map<String, List<SlotType1>> slotMap =
+                    RegistryPackageUtils.getNameSlotMapDuplicateSlotNamesAllowed(binding.getSlot());
 
             if (slotMap.containsKey(xmlServiceBindingsTypesAttributeName)) {
 
                 List<SlotType1> slots = slotMap.get(xmlServiceBindingsTypesAttributeName);
 
                 for (SlotType1 slot : slots) {
-                    bindingTypes.addAll(getSlotStringAttributes(slot));
+                    bindingTypes.addAll(RegistryPackageUtils.getSlotStringValues(slot));
                 }
             }
 
@@ -315,7 +314,7 @@ public class RegistryPackageConverter {
 
                 List<SlotType1> slots = slotMap.get(xmlServiceBindingsAttributeName);
                 for (SlotType1 slot : slots) {
-                    bindings.addAll(getSlotStringAttributes(slot));
+                    bindings.addAll(RegistryPackageUtils.getSlotStringValues(slot));
                 }
             }
 
@@ -331,7 +330,8 @@ public class RegistryPackageConverter {
     private static void parseNodeExtrinsicObject(RegistryObjectType registryObject,
             MetacardImpl metacard) throws RegistryConversionException {
         if (CollectionUtils.isNotEmpty(registryObject.getSlot())) {
-            Map<String, SlotType1> slotMap = getSlotMap(registryObject.getSlot());
+            Map<String, SlotType1> slotMap =
+                    RegistryPackageUtils.getNameSlotMap(registryObject.getSlot());
 
             setAttributeFromMap(RegistryObjectMetacardType.LIVE_DATE, slotMap, metacard);
             setAttributeFromMap(Metacard.CREATED, slotMap, metacard);
@@ -347,13 +347,13 @@ public class RegistryPackageConverter {
         }
 
         if (registryObject.isSetName()) {
-            setMetacardStringAttribute(getStringFromIST(registryObject.getName()),
+            setMetacardStringAttribute(RegistryPackageUtils.getStringFromIST(registryObject.getName()),
                     Metacard.TITLE,
                     metacard);
         }
 
         if (registryObject.isSetDescription()) {
-            setMetacardStringAttribute(getStringFromIST(registryObject.getDescription()),
+            setMetacardStringAttribute(RegistryPackageUtils.getStringFromIST(registryObject.getDescription()),
                     Metacard.DESCRIPTION,
                     metacard);
         }
@@ -386,13 +386,13 @@ public class RegistryPackageConverter {
         }
 
         if (registryObject.isSetName()) {
-            setMetacardStringAttribute(getStringFromIST(registryObject.getName()),
+            setMetacardStringAttribute(RegistryPackageUtils.getStringFromIST(registryObject.getName()),
                     Metacard.TITLE,
                     metacard);
         }
 
         if (registryObject.isSetDescription()) {
-            setMetacardStringAttribute(getStringFromIST(registryObject.getDescription()),
+            setMetacardStringAttribute(RegistryPackageUtils.getStringFromIST(registryObject.getDescription()),
                     Metacard.DESCRIPTION,
                     metacard);
         }
@@ -405,12 +405,10 @@ public class RegistryPackageConverter {
 
         if (registryObject.isSetExternalIdentifier()) {
             List<ExternalIdentifierType> extIds = registryObject.getExternalIdentifier();
-            for (ExternalIdentifierType extId : extIds) {
-                if (extId.getId()
-                        .equals(RegistryConstants.REGISTRY_MCARD_LOCAL_ID)) {
-                    metacard.setId(extId.getValue());
-                }
-            }
+            extIds.stream()
+                    .filter(extId -> extId.getId()
+                            .equals(RegistryConstants.REGISTRY_MCARD_LOCAL_ID))
+                    .forEach(extId -> metacard.setId(extId.getValue()));
         }
 
         if (registryObject.isSetHome()) {
@@ -472,11 +470,9 @@ public class RegistryPackageConverter {
 
     private static void setMetacardEmailAttribute(List<EmailAddressType> emailAddresses,
             String metacardAttribute, MetacardImpl metacard) {
-        List<String> metacardEmailAddresses = new ArrayList<>();
-
-        for (EmailAddressType email : emailAddresses) {
-            metacardEmailAddresses.add(email.getAddress());
-        }
+        List<String> metacardEmailAddresses = emailAddresses.stream()
+                .map(EmailAddressType::getAddress)
+                .collect(Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(metacardEmailAddresses)) {
             metacard.setAttribute(metacardAttribute, (Serializable) metacardEmailAddresses);
@@ -526,23 +522,9 @@ public class RegistryPackageConverter {
         }
     }
 
-    private static List<String> getSlotStringAttributes(SlotType1 slot) {
-        List<String> slotAttributes = new ArrayList<>();
-
-        if (slot.isSetValueList()) {
-            ValueListType valueList = slot.getValueList()
-                    .getValue();
-            if (valueList.isSetValue()) {
-                slotAttributes = valueList.getValue();
-            }
-        }
-
-        return slotAttributes;
-    }
-
     private static void setSlotStringAttribute(SlotType1 slot, String metacardAttributeName,
             MetacardImpl metacard) {
-        List<String> stringAttributes = getSlotStringAttributes(slot);
+        List<String> stringAttributes = RegistryPackageUtils.getSlotStringValues(slot);
 
         if (CollectionUtils.isEmpty(stringAttributes)) {
             return;
@@ -555,32 +537,9 @@ public class RegistryPackageConverter {
         }
     }
 
-    private static List<Date> getSlotDateAttributes(SlotType1 slot) {
-        List<Date> dates = new ArrayList<>();
-
-        if (slot.isSetValueList()) {
-            ValueListType valueList = slot.getValueList()
-                    .getValue();
-
-            if (valueList.isSetValue()) {
-                List<String> values = valueList.getValue();
-
-                for (String dateString : values) {
-                    Date date = Date.from(ZonedDateTime.parse(dateString)
-                            .toInstant());
-                    if (date != null) {
-                        dates.add(date);
-                    }
-                }
-            }
-        }
-
-        return dates;
-    }
-
     private static void setSlotDateAttribute(SlotType1 slot, String metacardAttributeName,
             MetacardImpl metacard) {
-        List<Date> dates = getSlotDateAttributes(slot);
+        List<Date> dates = RegistryPackageUtils.getSlotDateValues(slot);
 
         if (CollectionUtils.isNotEmpty(dates)) {
             if (isAttributeMultiValued(metacardAttributeName, metacard)) {
@@ -649,46 +608,6 @@ public class RegistryPackageConverter {
             }
 
         }
-    }
-
-    private static Map<String, SlotType1> getSlotMap(List<SlotType1> slots) {
-        Map<String, SlotType1> slotMap = new HashMap<>();
-
-        for (SlotType1 slot : slots) {
-            slotMap.put(slot.getName(), slot);
-        }
-        return slotMap;
-    }
-
-    private static Map<String, List<SlotType1>> getSlotMapWithMultipleValues(
-            List<SlotType1> slots) {
-        Map<String, List<SlotType1>> slotMap = new HashMap<>();
-
-        for (SlotType1 slot : slots) {
-            if (!slotMap.containsKey(slot.getName())) {
-                List<SlotType1> slotList = new ArrayList<>();
-                slotList.add(slot);
-
-                slotMap.put(slot.getName(), slotList);
-            } else {
-                slotMap.get(slot.getName())
-                        .add(slot);
-            }
-        }
-        return slotMap;
-    }
-
-    private static String getStringFromIST(InternationalStringType internationalString) {
-        String stringValue = "";
-        List<LocalizedStringType> localizedStrings = internationalString.getLocalizedString();
-        if (CollectionUtils.isNotEmpty(localizedStrings)) {
-            LocalizedStringType localizedString = localizedStrings.get(0);
-            if (localizedString != null) {
-                stringValue = localizedString.getValue();
-            }
-        }
-
-        return stringValue;
     }
 
     private static void unsetMetacardAttribute(String metacardAttribute, MetacardImpl metacard) {

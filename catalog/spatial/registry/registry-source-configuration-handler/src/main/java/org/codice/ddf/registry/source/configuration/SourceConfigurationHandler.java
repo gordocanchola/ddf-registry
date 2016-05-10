@@ -134,7 +134,8 @@ public class SourceConfigurationHandler implements EventHandler {
                 } else if (event.getTopic()
                         .equals("ddf/catalog/event/UPDATED")) {
                     processUpdate(mcard);
-                } else if (event.getTopic().equals("ddf/catalog/event/DELETED")) {
+                } else if (event.getTopic()
+                        .equals("ddf/catalog/event/DELETED")) {
                     processDelete(mcard);
                 }
             });
@@ -173,14 +174,14 @@ public class SourceConfigurationHandler implements EventHandler {
         InputStream inputStream = new ByteArrayInputStream(metadata.getBytes(Charsets.UTF_8));
         boolean identityNode = false;
 
-
         Attribute identityNodeAttribute =
                 metacard.getAttribute(RegistryObjectMetacardType.REGISTRY_IDENTITY_NODE);
         if (identityNodeAttribute != null) {
             identityNode = true;
         }
 
-        boolean autoActivateConfigurations = activateConfigurations && !identityNode && (createEvent || !preserveActiveConfigurations);
+        boolean autoActivateConfigurations = activateConfigurations && !identityNode && (createEvent
+                || !preserveActiveConfigurations);
 
         JAXBElement<RegistryObjectType> registryObjectTypeJAXBElement = parser.unmarshal(
                 unmarshalConfigurator,
@@ -233,7 +234,7 @@ public class SourceConfigurationHandler implements EventHandler {
             for (Configuration configuration : configurations) {
                 configMap.put(configuration.getFactoryPid(), configuration);
 
-                if (autoActivateConfigurations &&  !activeHandled) {
+                if (autoActivateConfigurations && !activeHandled) {
                     String fPidToActivate = bindingTypeToFactoryPidMap.get(bindingTypeToActivate);
 
                     if (configuration.getFactoryPid()
@@ -267,18 +268,18 @@ public class SourceConfigurationHandler implements EventHandler {
 
         for (ServiceBindingType bindingType : bindingTypes) {
             Map<String, List<SlotType1>> slotMap =
-                    RegistryPackageUtils.getNameSlotMapWithMultipleValues(bindingType.getSlot());
+                    RegistryPackageUtils.getNameSlotMapDuplicateSlotNamesAllowed(bindingType.getSlot());
 
             Hashtable<String, Object> serviceConfigurationProperties = new Hashtable<>();
 
             if (slotMap.get(BINDING_TYPE) == null
-                    || CollectionUtils.isEmpty(RegistryPackageUtils.getSlotStringAttributes(slotMap.get(
+                    || CollectionUtils.isEmpty(RegistryPackageUtils.getSlotStringValues(slotMap.get(
                     BINDING_TYPE)
                     .get(0)))) {
                 continue;
             }
 
-            String factoryPidMask = RegistryPackageUtils.getSlotStringAttributes(slotMap.get(
+            String factoryPidMask = RegistryPackageUtils.getSlotStringValues(slotMap.get(
                     BINDING_TYPE)
                     .get(0))
                     .get(0);
@@ -318,7 +319,7 @@ public class SourceConfigurationHandler implements EventHandler {
             String bindingName = null;
             for (Map.Entry slotMapEntry : slotMap.entrySet()) {
                 SlotType1 mapSlot = (SlotType1) ((ArrayList) slotMapEntry.getValue()).get(0);
-                List<String> slotAttributes = RegistryPackageUtils.getSlotStringAttributes(mapSlot);
+                List<String> slotAttributes = RegistryPackageUtils.getSlotStringValues(mapSlot);
                 if (CollectionUtils.isEmpty(slotAttributes)) {
                     continue;
                 }
@@ -346,7 +347,8 @@ public class SourceConfigurationHandler implements EventHandler {
                 if (configuration == null) {
 
                     String pid = factoryPidDisabled;
-                    if (autoActivateConfigurations && factoryPidMask.equals(bindingTypeToActivate)) {
+                    if (autoActivateConfigurations
+                            && factoryPidMask.equals(bindingTypeToActivate)) {
                         pid = factoryPid;
                     }
                     configuration = configurationAdmin.createFactoryConfiguration(pid, null);
@@ -360,12 +362,17 @@ public class SourceConfigurationHandler implements EventHandler {
     private void deleteRegistryConfigurations(Metacard metacard)
             throws IOException, InvalidSyntaxException {
         String registryId = null;
-        Attribute registryIdAttribute = metacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID);
+        Attribute registryIdAttribute =
+                metacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID);
         if (registryIdAttribute != null) {
-            registryId = registryIdAttribute.getValue().toString();
+            registryId = registryIdAttribute.getValue()
+                    .toString();
         }
 
-        Configuration[] configurations = configurationAdmin.listConfigurations(String.format("(%s=%s)", RegistryObjectMetacardType.REGISTRY_ID, registryId));
+        Configuration[] configurations = configurationAdmin.listConfigurations(String.format(
+                "(%s=%s)",
+                RegistryObjectMetacardType.REGISTRY_ID,
+                registryId));
         if (configurations != null && configurations.length > 0) {
             for (Configuration configuration : configurations) {
                 configuration.delete();
@@ -384,16 +391,16 @@ public class SourceConfigurationHandler implements EventHandler {
 
         for (ServiceBindingType bindingType : bindingTypes) {
             Map<String, List<SlotType1>> slotMap =
-                    RegistryPackageUtils.getNameSlotMapWithMultipleValues(bindingType.getSlot());
+                    RegistryPackageUtils.getNameSlotMapDuplicateSlotNamesAllowed(bindingType.getSlot());
 
             if (slotMap.get(BINDING_TYPE) == null
-                    || CollectionUtils.isEmpty(RegistryPackageUtils.getSlotStringAttributes(slotMap.get(
+                    || CollectionUtils.isEmpty(RegistryPackageUtils.getSlotStringValues(slotMap.get(
                     BINDING_TYPE)
                     .get(0)))) {
                 continue;
             }
 
-            String factoryPidMask = RegistryPackageUtils.getSlotStringAttributes(slotMap.get(
+            String factoryPidMask = RegistryPackageUtils.getSlotStringValues(slotMap.get(
                     BINDING_TYPE)
                     .get(0))
                     .get(0);
@@ -548,7 +555,8 @@ public class SourceConfigurationHandler implements EventHandler {
         if (!activateConfigurations.equals(this.activateConfigurations)) {
             this.activateConfigurations = activateConfigurations;
 
-            if (!activateConfigurations || preserveActiveConfigurations == null || preserveActiveConfigurations) {
+            if (!activateConfigurations || preserveActiveConfigurations == null
+                    || preserveActiveConfigurations) {
                 return;
             }
 
@@ -560,7 +568,8 @@ public class SourceConfigurationHandler implements EventHandler {
         if (!preserveActiveConfigurations.equals(this.preserveActiveConfigurations)) {
             this.preserveActiveConfigurations = preserveActiveConfigurations;
 
-            if (preserveActiveConfigurations || activateConfigurations == null || !activateConfigurations) {
+            if (preserveActiveConfigurations || activateConfigurations == null
+                    || !activateConfigurations) {
                 return;
             }
 
@@ -590,7 +599,8 @@ public class SourceConfigurationHandler implements EventHandler {
                 && !sourceActivationPriorityOrder.equals(this.sourceActivationPriorityOrder)) {
             this.sourceActivationPriorityOrder = sourceActivationPriorityOrder;
 
-            if (activateConfigurations == null || preserveActiveConfigurations == null || !activateConfigurations && preserveActiveConfigurations) {
+            if (activateConfigurations == null || preserveActiveConfigurations == null
+                    || !activateConfigurations && preserveActiveConfigurations) {
                 return;
             }
 
@@ -613,9 +623,11 @@ public class SourceConfigurationHandler implements EventHandler {
     public void setParser(Parser parser) {
         List<String> contextPath = Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName());
         ClassLoader classLoader = this.getClass()
                 .getClassLoader();

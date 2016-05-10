@@ -13,6 +13,8 @@
  */
 package org.codice.ddf.registry.federationadmin.impl;
 
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.RIM_FACTORY;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -61,6 +63,7 @@ import org.codice.ddf.registry.common.metacard.RegistryObjectMetacardType;
 import org.codice.ddf.registry.federationadmin.FederationAdminMBean;
 import org.codice.ddf.registry.federationadmin.service.FederationAdminException;
 import org.codice.ddf.registry.federationadmin.service.FederationAdminService;
+import org.codice.ddf.registry.schemabindings.RegistryPackageUtils;
 import org.codice.ddf.registry.schemabindings.RegistryPackageWebConverter;
 import org.codice.ddf.ui.admin.api.ConfigurationAdminExt;
 import org.geotools.filter.FilterFactoryImpl;
@@ -107,7 +110,6 @@ import ddf.catalog.source.UnsupportedQueryException;
 import ddf.catalog.transform.CatalogTransformerException;
 import ddf.catalog.transform.InputTransformer;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ObjectFactory;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
@@ -118,8 +120,6 @@ public class FederationAdmin implements FederationAdminMBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(FederationAdmin.class);
 
     private static final FilterFactory FILTER_FACTORY = new FilterFactoryImpl();
-
-    private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
 
     private static final String MAP_ENTRY_ID = "id";
 
@@ -601,7 +601,7 @@ public class FederationAdmin implements FederationAdminMBean {
                 || current.size() != updated.size()) {
             return true;
         }
-        return current.containsAll(updated) && updated.containsAll(current);
+        return !current.containsAll(updated) || !updated.containsAll(current);
     }
 
     private Boolean checkIfMetacardExists(String storeId, String registryId)
@@ -710,34 +710,37 @@ public class FederationAdmin implements FederationAdminMBean {
 
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(ZoneOffset.UTC.toString()));
             String rightNow = now.toString();
-            ValueListType valueList = RIM_FACTORY.createValueListType();
-            valueList.getValue()
-                    .add(rightNow);
+
             for (SlotType1 slot : nodeInfo.getSlot()) {
                 if (slot.getName()
                         .equals(RegistryConstants.XML_LIVE_DATE_NAME)) {
                     liveDateFound = true;
                 } else if (slot.getName()
                         .equals(RegistryConstants.XML_LAST_UPDATED_NAME)) {
+                    ValueListType valueList = RIM_FACTORY.createValueListType();
+                    valueList.getValue()
+                            .add(rightNow);
                     slot.setValueList(RIM_FACTORY.createValueList(valueList));
                     lastUpdatedFound = true;
                 }
             }
 
             if (!liveDateFound) {
-                SlotType1 liveDate = RIM_FACTORY.createSlotType1();
-                liveDate.setValueList(RIM_FACTORY.createValueList(valueList));
-                liveDate.setSlotType(DatatypeConstants.DATETIME.toString());
-                liveDate.setName(RegistryConstants.XML_LIVE_DATE_NAME);
+                SlotType1 liveDate =
+                        RegistryPackageUtils.getSlotFromString(RegistryConstants.XML_LIVE_DATE_NAME,
+                                rightNow,
+                                DatatypeConstants.DATETIME.toString());
+
                 nodeInfo.getSlot()
                         .add(liveDate);
             }
 
             if (!lastUpdatedFound) {
-                SlotType1 lastUpdated = RIM_FACTORY.createSlotType1();
-                lastUpdated.setValueList(RIM_FACTORY.createValueList(valueList));
-                lastUpdated.setSlotType(DatatypeConstants.DATETIME.toString());
-                lastUpdated.setName(RegistryConstants.XML_LAST_UPDATED_NAME);
+                SlotType1 lastUpdated =
+                        RegistryPackageUtils.getSlotFromString(RegistryConstants.XML_LAST_UPDATED_NAME,
+                                rightNow,
+                                DatatypeConstants.DATETIME.toString());
+
                 nodeInfo.getSlot()
                         .add(lastUpdated);
             }
@@ -914,9 +917,11 @@ public class FederationAdmin implements FederationAdminMBean {
     public void setParser(Parser parser) {
         List<String> contextPath = Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName());
 
         ClassLoader classLoader = this.getClass()

@@ -44,9 +44,11 @@ public class RegistryPackageWebConverterTest {
 
         configurator = parser.configureParser(Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName()),
                 this.getClass()
                         .getClassLoader());

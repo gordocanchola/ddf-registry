@@ -195,8 +195,8 @@ public class RegistryReportViewer {
                                         .getVersionName());
                     }
                     if (extrinsicObjectType.isSetDescription()) {
-                        generalMap.put("Description", RegistryPackageUtils.getStringFromIST(
-                                extrinsicObjectType.getDescription()));
+                        generalMap.put("Description",
+                                RegistryPackageUtils.getStringFromIST(extrinsicObjectType.getDescription()));
                     }
                     Map<String, Object> customSlots = getCustomSlots(extrinsicObjectType.getSlot());
                     generalMap.putAll(customSlots);
@@ -387,9 +387,7 @@ public class RegistryReportViewer {
 
         for (SlotType1 slot : slots) {
             String key = slot.getName();
-            List<String> values = slot.getValueList()
-                    .getValue()
-                    .getValue();
+            List<String> values = RegistryPackageUtils.getSlotStringValues(slot);
             if (CollectionUtils.isEmpty(values)) {
                 continue;
             }
