@@ -13,6 +13,7 @@
  **/
 package org.codice.ddf.registry.federationadmin.service.impl;
 
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.RIM_FACTORY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -91,15 +92,12 @@ import ddf.catalog.source.UnsupportedQueryException;
 import ddf.catalog.transform.CatalogTransformerException;
 import ddf.security.SecurityConstants;
 import ddf.security.Subject;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ObjectFactory;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FederationAdminServiceImplTest {
 
     private static final FilterFactory FILTER_FACTORY = new FilterFactoryImpl();
-
-    private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
 
     private static final String TEST_SITE_NAME = "Slate Rock and Gravel Company";
 

@@ -38,6 +38,7 @@ import org.codice.ddf.parser.ParserConfigurator;
 import org.codice.ddf.parser.xml.XmlParser;
 import org.codice.ddf.registry.common.RegistryConstants;
 import org.codice.ddf.registry.common.metacard.RegistryObjectMetacardType;
+import org.codice.ddf.registry.schemabindings.RegistryPackageUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -229,11 +230,13 @@ public class IdentificationPluginTest {
 
         this.configurator =
                 parser.configureParser(Arrays.asList(RegistryObjectType.class.getPackage()
-                                        .getName(),
-                                net.opengis.ogc.ObjectFactory.class.getPackage()
-                                        .getName(),
-                                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
-                                        .getName()),
+                                .getName(),
+                        RegistryPackageUtils.OGC_FACTORY.getClass()
+                                .getPackage()
+                                .getName(),
+                        RegistryPackageUtils.GML_FACTORY.getClass()
+                                .getPackage()
+                                .getName()),
                         this.getClass()
                                 .getClassLoader());
 

@@ -13,8 +13,11 @@
  */
 package org.codice.ddf.registry.schemabindings;
 
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.GML_FACTORY;
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.RIM_FACTORY;
+import static org.codice.ddf.registry.schemabindings.RegistryPackageUtils.WRS_FACTORY;
+
 import java.math.BigInteger;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -37,8 +40,6 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.EmailAddressType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExternalIdentifierType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.InternationalStringType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.LocalizedStringType;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ObjectFactory;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.OrganizationType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.PersonNameType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.PersonType;
@@ -159,14 +160,6 @@ public class RegistryPackageWebConverter {
     private static final String LID_KEY = "Lid";
 
     private static final String STATUS_KEY = "Status";
-
-    private static final ObjectFactory RIM_FACTORY = new ObjectFactory();
-
-    private static final net.opengis.cat.wrs.v_1_0_2.ObjectFactory WRS_FACTORY =
-            new net.opengis.cat.wrs.v_1_0_2.ObjectFactory();
-
-    private static final net.opengis.gml.v_3_1_1.ObjectFactory GML_FACTORY =
-            new net.opengis.gml.v_3_1_1.ObjectFactory();
 
     private static final String BINDING_ACCESS_URI = "accessUri";
 
@@ -771,7 +764,8 @@ public class RegistryPackageWebConverter {
 
             valueToPopulate = getStringFromMap(SPECIFICATION_LINK_USAGE_DESCRIPTION, map);
             if (StringUtils.isNotBlank(valueToPopulate)) {
-                InternationalStringType istToPopulate = getISTFromString(valueToPopulate);
+                InternationalStringType istToPopulate =
+                        RegistryPackageUtils.getInternationalStringTypeFromString(valueToPopulate);
                 if (istToPopulate != null) {
                     specificationLink.setUsageDescription(istToPopulate);
                     populated = true;
@@ -968,7 +962,7 @@ public class RegistryPackageWebConverter {
 
             if (specificationLink.isSetUsageDescription()) {
                 specificationLinkMap.put(SPECIFICATION_LINK_USAGE_DESCRIPTION,
-                        getStringFromIST(specificationLink.getUsageDescription()));
+                        RegistryPackageUtils.getStringFromIST(specificationLink.getUsageDescription()));
             }
 
             if (specificationLink.isSetUsageParameter()) {
@@ -1283,7 +1277,9 @@ public class RegistryPackageWebConverter {
         }
 
         if (registryObject.isSetDescription()) {
-            putStringValue(DESCRIPTION_KEY, getStringFromIST(registryObject.getDescription()), map);
+            putStringValue(DESCRIPTION_KEY,
+                    RegistryPackageUtils.getStringFromIST(registryObject.getDescription()),
+                    map);
         }
 
         if (registryObject.isSetExternalIdentifier()) {
@@ -1303,7 +1299,9 @@ public class RegistryPackageWebConverter {
         }
 
         if (registryObject.isSetName()) {
-            putStringValue(NAME_KEY, getStringFromIST(registryObject.getName()), map);
+            putStringValue(NAME_KEY,
+                    RegistryPackageUtils.getStringFromIST(registryObject.getName()),
+                    map);
         }
 
         if (registryObject.isSetObjectType()) {
@@ -1341,7 +1339,8 @@ public class RegistryPackageWebConverter {
 
         String valueToPopulate = getStringFromMap(DESCRIPTION_KEY, map);
         if (StringUtils.isNotBlank(valueToPopulate)) {
-            InternationalStringType istToPopulate = getISTFromString(valueToPopulate);
+            InternationalStringType istToPopulate =
+                    RegistryPackageUtils.getInternationalStringTypeFromString(valueToPopulate);
             if (istToPopulate != null) {
                 registryObject.setDescription(istToPopulate);
                 populated = true;
@@ -1377,7 +1376,8 @@ public class RegistryPackageWebConverter {
 
         valueToPopulate = getStringFromMap(NAME_KEY, map);
         if (StringUtils.isNotBlank(valueToPopulate)) {
-            InternationalStringType istToPopulate = getISTFromString(valueToPopulate);
+            InternationalStringType istToPopulate =
+                    RegistryPackageUtils.getInternationalStringTypeFromString(valueToPopulate);
             if (istToPopulate != null) {
                 registryObject.setName(istToPopulate);
                 populated = true;
@@ -1591,7 +1591,7 @@ public class RegistryPackageWebConverter {
     }
 
     private static void putSlotDateValue(SlotType1 slot, List<Map<String, Object>> list) {
-        List<Date> dates = getSlotDateValues(slot);
+        List<Date> dates = RegistryPackageUtils.getSlotDateValues(slot);
 
         if (CollectionUtils.isNotEmpty(dates)) {
             Map<String, Object> map = new HashMap<>();
@@ -1605,45 +1605,8 @@ public class RegistryPackageWebConverter {
         }
     }
 
-    private static List<Date> getSlotDateValues(SlotType1 slot) {
-        List<Date> dates = new ArrayList<>();
-
-        if (slot.isSetValueList()) {
-            ValueListType valueList = slot.getValueList()
-                    .getValue();
-
-            if (valueList.isSetValue()) {
-                List<String> values = valueList.getValue();
-
-                for (String dateString : values) {
-                    Date date = Date.from(ZonedDateTime.parse(dateString)
-                            .toInstant());
-                    if (date != null) {
-                        dates.add(date);
-                    }
-                }
-            }
-        }
-
-        return dates;
-    }
-
-    private static List<String> getSlotStringValues(SlotType1 slot) {
-        List<String> slotValues = new ArrayList<>();
-
-        if (slot.isSetValueList()) {
-            ValueListType valueList = slot.getValueList()
-                    .getValue();
-            if (valueList.isSetValue()) {
-                slotValues = valueList.getValue();
-            }
-        }
-
-        return slotValues;
-    }
-
     private static void putSlotStringValue(SlotType1 slot, List<Map<String, Object>> list) {
-        List<String> stringValues = getSlotStringValues(slot);
+        List<String> stringValues = RegistryPackageUtils.getSlotStringValues(slot);
 
         if (CollectionUtils.isNotEmpty(stringValues)) {
             Map<String, Object> map = new HashMap<>();
@@ -1730,33 +1693,6 @@ public class RegistryPackageWebConverter {
         if (StringUtils.isNotBlank(value)) {
             map.put(key, value);
         }
-    }
-
-    private static String getStringFromIST(InternationalStringType internationalString) {
-        String stringValue = "";
-        List<LocalizedStringType> localizedStrings = internationalString.getLocalizedString();
-        if (CollectionUtils.isNotEmpty(localizedStrings)) {
-            LocalizedStringType localizedString = localizedStrings.get(0);
-            if (localizedString != null) {
-                stringValue = localizedString.getValue();
-            }
-        }
-
-        return stringValue;
-    }
-
-    private static InternationalStringType getISTFromString(String internationalizeThis) {
-        if (StringUtils.isBlank(internationalizeThis)) {
-            return null;
-        }
-
-        InternationalStringType ist = new InternationalStringType();
-        LocalizedStringType lst = new LocalizedStringType();
-
-        lst.setValue(internationalizeThis);
-        ist.setLocalizedString(Collections.singletonList(lst));
-
-        return ist;
     }
 
     private static boolean isRegistryPackageEmpty(RegistryPackageType registryPackage) {

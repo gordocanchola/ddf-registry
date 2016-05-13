@@ -34,6 +34,7 @@ import org.codice.ddf.parser.ParserConfigurator;
 import org.codice.ddf.parser.ParserException;
 import org.codice.ddf.registry.common.RegistryConstants;
 import org.codice.ddf.registry.common.metacard.RegistryObjectMetacardType;
+import org.codice.ddf.registry.schemabindings.RegistryPackageUtils;
 import org.codice.ddf.security.common.Security;
 import org.opengis.filter.Filter;
 import org.slf4j.Logger;
@@ -351,9 +352,11 @@ public class IdentificationPlugin implements PreIngestPlugin, PostIngestPlugin {
     public void setParser(Parser parser) {
         List<String> contextPath = Arrays.asList(RegistryObjectType.class.getPackage()
                         .getName(),
-                net.opengis.ogc.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.OGC_FACTORY.getClass()
+                        .getPackage()
                         .getName(),
-                net.opengis.gml.v_3_1_1.ObjectFactory.class.getPackage()
+                RegistryPackageUtils.GML_FACTORY.getClass()
+                        .getPackage()
                         .getName());
         ClassLoader classLoader = this.getClass()
                 .getClassLoader();
