@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p>
+ * <p/>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p>
+ * <p/>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -147,7 +147,7 @@ public class IdentificationPlugin implements PreIngestPlugin, PostIngestPlugin {
                 previousMetacardsMap.put(metacard.getId(), metacard);
             }
 
-            ArrayList<Metacard> metacardsToRemove = new ArrayList<>();
+            ArrayList<Map.Entry<Serializable, Metacard>> entriesToRemove = new ArrayList<>();
 
             for (Map.Entry<Serializable, Metacard> entry : input.getUpdates()) {
                 Metacard updateMetacard = entry.getValue();
@@ -155,7 +155,9 @@ public class IdentificationPlugin implements PreIngestPlugin, PostIngestPlugin {
 
                 if (existingMetacard != null) {
                     if (existingMetacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID)
-                            .equals(updateMetacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID))) {
+                            .getValue()
+                            .equals(updateMetacard.getAttribute(RegistryObjectMetacardType.REGISTRY_ID)
+                                    .getValue())) {
 
                         if (transientAttributeUpdates || updateMetacard.getModifiedDate()
                                 .after(existingMetacard.getModifiedDate())) {
@@ -171,13 +173,14 @@ public class IdentificationPlugin implements PreIngestPlugin, PostIngestPlugin {
                                 }
                             }
                         } else {
-                            metacardsToRemove.add(updateMetacard);
+                            entriesToRemove.add(entry);
                         }
                     }
                 }
             }
+
             input.getUpdates()
-                    .removeAll(metacardsToRemove);
+                    .removeAll(entriesToRemove);
 
         }
         return input;
@@ -299,8 +302,9 @@ public class IdentificationPlugin implements PreIngestPlugin, PostIngestPlugin {
                             registryObjectTypeJAXBElement,
                             outputStream);
 
-                    metacard.setAttribute(new AttributeImpl(Metacard.METADATA,
-                            new String(outputStream.toByteArray(), Charsets.UTF_8)));
+                    metacard.setAttribute(new AttributeImpl(Metacard.METADATA, new String(
+                            outputStream.toByteArray(),
+                            Charsets.UTF_8)));
                 }
             }
 
