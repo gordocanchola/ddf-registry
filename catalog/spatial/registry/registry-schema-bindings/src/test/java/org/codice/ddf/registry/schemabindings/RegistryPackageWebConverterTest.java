@@ -16,8 +16,10 @@ package org.codice.ddf.registry.schemabindings;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -91,6 +93,16 @@ public class RegistryPackageWebConverterTest {
                             .get(i)
                             .getValue())));
         }
+    }
+
+    @Test
+    public void testEmptyRegistryPackage() throws Exception {
+        Map<String, Object> emptyRegistryMap = new HashMap<>();
+
+        RegistryPackageType registryPackage =
+                RegistryPackageWebConverter.getRegistryPackageFromWebMap(emptyRegistryMap);
+
+        assertThat(registryPackage, nullValue());
     }
 
     private RegistryObjectType getRegistryObjectFromResource(String path) throws ParserException {
