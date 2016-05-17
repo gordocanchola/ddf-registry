@@ -184,6 +184,10 @@
                         </goals>
                         <configuration>
                             <haltOnFailure>true</haltOnFailure>
+                            <includes>
+                                <include>**/RegistryPackageUtils.*</include>
+                                <include>**/RegistryPackageWebConverter.*</include>
+                            </includes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -191,22 +195,22 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.0</minimum>
+                                            <minimum>0.90</minimum>
                                         </limit>
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.0</minimum>
+                                            <minimum>0.65</minimum>
                                         </limit>
                                         <limit>
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.0</minimum>
+                                            <minimum>0.50</minimum>
                                         </limit>
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.0</minimum>
+                                            <minimum>0.90</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
