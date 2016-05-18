@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta content="text/html; charset=windows-1252" http-equiv="content-type">
+    <meta content="text/html; charset=windows-1252" http-equiv="content-type" />
     <!-- styles -->
-    <link href="/services/registries/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/services/registries/assets/css/bootstrap.min.css" rel="stylesheet" />
     <style type="text/css">
         body {
-        background-color: {{background}};
-        color: {{foreground}};
+        background-color: {
+        {
+        background
+        }
+        }
+        ;
+        color: {
+        {
+        foreground
+        }
+        }
+        ;
         margin-left: 15px;
         }
 
@@ -27,7 +38,9 @@
         height: 20px;
         }
 
-        .header-layout, .footer-layout, #content {
+        .header-layout,
+        .footer-layout,
+        #content {
         position: fixed;
         right: 0;
         left: 0;
@@ -69,7 +82,7 @@
         margin-left: 50px
         }
     </style>
-    <link href="/services/registries/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="/services/registries/assets/css/bootstrap-theme.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -178,4 +191,5 @@
 </table>
 {{/each}}
 </body>
+
 </html>
