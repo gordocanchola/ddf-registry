@@ -113,6 +113,19 @@ public class RegistryReportViewer {
                     .build();
         }
 
+        Map<String, Object> registryMap = buildRegistryMap(registryPackage);
+
+        try {
+            Template template = handlebars.compile("report");
+            html = template.apply(registryMap);
+        } catch (IOException e) {
+        }
+
+        return Response.ok(html)
+                .build();
+    }
+
+    protected Map<String, Object> buildRegistryMap(RegistryPackageType registryPackage) {
         Map<String, Object> registryMap = new HashMap<>();
 
         Map<String, Object> extrinsicInfo = getExtrinsicInfo(registryPackage);
@@ -132,14 +145,7 @@ public class RegistryReportViewer {
         Map<String, Object> contactMap = getContactInfo(registryPackage);
         registryMap.put("Contacts", contactMap);
 
-        try {
-            Template template = handlebars.compile("report");
-            html = template.apply(registryMap);
-        } catch (IOException e) {
-        }
-
-        return Response.ok(html)
-                .build();
+        return registryMap;
     }
 
     private Map<String, Object> getServiceInfo(RegistryObjectListType registryObjectListType) {
@@ -249,18 +255,16 @@ public class RegistryReportViewer {
             if (organizationType.isSetName()) {
                 orgName = RegistryPackageUtils.getStringFromIST(organizationType.getName());
             }
-            if (organizationType.isSetAddress()) {
-                List<String> orgAddresses = getAddresses(organizationType.getAddress());
-                contactInfo.put("Addresses", orgAddresses);
-            }
-            if (organizationType.isSetTelephoneNumber()) {
-                List<String> phoneNumbers = getPhoneNumbers(organizationType.getTelephoneNumber());
-                contactInfo.put("Phone Numbers", phoneNumbers);
-            }
-            if (organizationType.isSetEmailAddress()) {
-                List<String> emailAddresses = getEmailAddresses(organizationType.getEmailAddress());
-                contactInfo.put("Email Addresses", emailAddresses);
-            }
+
+            addNonEmptyKeyValue(contactInfo,
+                    "Addresses",
+                    getAddresses(organizationType.getAddress()));
+            addNonEmptyKeyValue(contactInfo,
+                    "Phone Numbers",
+                    getPhoneNumbers(organizationType.getTelephoneNumber()));
+            addNonEmptyKeyValue(contactInfo,
+                    "Email Addresses",
+                    getEmailAddresses(organizationType.getEmailAddress()));
 
             organizationInfo.put("ContactInfo", contactInfo);
             organizationInfo.put("CustomSlots", getCustomSlots(organizationType.getSlot()));
@@ -278,33 +282,25 @@ public class RegistryReportViewer {
             Map<String, Object> contactInfo = new HashMap<>();
 
             PersonNameType personName = person.getPersonName();
-            String firstName = "";
-            String middleName = "";
-            String lastName = "";
-            if (personName.isSetFirstName()) {
-                firstName = personName.getFirstName() + " ";
-            }
-            if (personName.isSetMiddleName()) {
-                middleName = personName.getMiddleName() + " ";
-            }
-            if (personName.isSetLastName()) {
-                lastName = personName.getLastName();
-            }
-            String name = firstName + middleName + lastName;
+            ArrayList<String> nameArray = new ArrayList<>();
 
-            if (person.isSetEmailAddress()) {
-                List<String> emailAddresses = getEmailAddresses(person.getEmailAddress());
-                contactInfo.put("Email Addresses", emailAddresses);
+            if (personName == null) {
+                break;
             }
+            addNonEmptyValue(nameArray, personName.getFirstName());
+            addNonEmptyValue(nameArray, personName.getMiddleName());
+            addNonEmptyValue(nameArray, personName.getLastName());
 
-            if (person.isSetTelephoneNumber()) {
-                List<String> phoneNumbers = getPhoneNumbers(person.getTelephoneNumber());
-                contactInfo.put("Phone Numbers", phoneNumbers);
-            }
-            if (person.isSetAddress()) {
-                List<String> personAddresses = getAddresses(person.getAddress());
-                contactInfo.put("Addresses", personAddresses);
-            }
+            String name = StringUtils.join(nameArray, " ");
+
+            addNonEmptyKeyValue(contactInfo,
+                    "Email Addresses",
+                    getEmailAddresses(person.getEmailAddress()));
+            addNonEmptyKeyValue(contactInfo,
+                    "Phone Numbers",
+                    getPhoneNumbers(person.getTelephoneNumber()));
+            addNonEmptyKeyValue(contactInfo, "Addresses", getAddresses(person.getAddress()));
+
             personMap.put("ContactInfo", contactInfo);
             personMap.put("CustomSlots", getCustomSlots(person.getSlot()));
             contactMap.put(name, personMap);
@@ -316,28 +312,15 @@ public class RegistryReportViewer {
     private List<String> getAddresses(List<PostalAddressType> addressTypes) {
         List<String> addresses = new ArrayList<>();
         for (PostalAddressType address : addressTypes) {
-            String city = "";
-            String street = "";
-            String stateOrProvince = "";
-            String postalCode = "";
-            String country = "";
-            if (address.isSetCity()) {
-                city = address.getCity() + " ";
-            }
-            if (address.isSetCountry()) {
-                country = address.getCountry();
-            }
-            if (address.isSetPostalCode()) {
-                postalCode = address.getPostalCode() + " ";
-            }
-            if (address.isSetStateOrProvince()) {
-                stateOrProvince = address.getStateOrProvince() + " ";
-            }
-            if (address.isSetStreet()) {
-                street = address.getStreet() + " ";
-            }
+            ArrayList<String> addressArray = new ArrayList<>();
 
-            String addressString = street + city + stateOrProvince + postalCode + country;
+            addNonEmptyValue(addressArray, address.getStreet());
+            addNonEmptyValue(addressArray, address.getCity());
+            addNonEmptyValue(addressArray, address.getStateOrProvince());
+            addNonEmptyValue(addressArray, address.getPostalCode());
+            addNonEmptyValue(addressArray, address.getCountry());
+
+            String addressString = StringUtils.join(addressArray, " ");
             addresses.add(addressString);
         }
 
@@ -394,6 +377,20 @@ public class RegistryReportViewer {
             customSlotMap.put(key, StringUtils.join(values, ", "));
         }
         return customSlotMap;
+    }
+
+    private void addNonEmptyValue(List<String> list, String value) {
+        if (value == null) {
+            return;
+        }
+        list.add(value);
+    }
+
+    private void addNonEmptyKeyValue(Map<String, Object> map, String key, List<String> list) {
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        map.put(key, list);
     }
 
     public void setFederationAdminService(FederationAdminService federationAdminService) {
