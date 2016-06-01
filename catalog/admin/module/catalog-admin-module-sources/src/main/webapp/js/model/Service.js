@@ -338,32 +338,11 @@ define(function(require) {
             key: 'value',
             relatedModel: Service.Model,
             includeInJSON: false
-        }]
-    });
-
-    Service.RegistryService = Backbone.AssociatedModel.extend({
-        url: "/jolokia/exec/org.codice.ddf.registry:type=FederationAdminMBean/allRegistryInfo"
-    });
-
-
-    Service.RegistryMetacards = Backbone.AssociatedModel.extend({
-        url: "/jolokia/exec/org.codice.ddf.registry:type=FederationAdminMBean/allRegistryMetacards",
-        publishTo: function(idToPublishFrom, idsToPublishTo) {
-            var data = {
-                type: 'EXEC',
-                mbean: "org.codice.ddf.registry:type=FederationAdminMBean",
-                operation: "updatePublications",
-                arguments: [idToPublishFrom, idsToPublishTo]
-            };
-            data = JSON.stringify(data);
-            $.ajax({
-                type: 'POST',
-                url: "/jolokia/exec/org.codice.ddf.registry:type=FederationAdminMBean/updatePublications",
-                data: data
-            }).fail(function(error) {
-                console.log(error);
-            });
+        }],
+        parse: function(data){
+            return data;
         }
     });
+    
     return Service;
 });
